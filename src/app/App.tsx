@@ -17,6 +17,9 @@ interface OptionData {
   probability: number;
 }
 
+// 진짜 카드 위치
+const position = [1,2,3,8,9,4,7,6,5]
+
 // 각 카드 위치별 옵션 테이블
 const CARD_OPTIONS: Record<number, OptionData[]> = {
   0: [ // 1번 카드
@@ -288,7 +291,7 @@ export default function App() {
               <React.Fragment key={`row-${row}`}>
                 {Array.from({ length: 3 }).map((_, col) => {
                   const index = row * 3 + col;
-                  const card = cards[index];
+                  const card = cards[position[index] - 1];
                   
                   return (
                     <div
