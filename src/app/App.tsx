@@ -165,6 +165,12 @@ export default function App() {
   const [rowBonuses, setRowBonuses] = useState<Rank[]>([]);
   const [colBonuses, setColBonuses] = useState<Rank[]>([]);
   const [diagBonus, setDiagBonus] = useState<Rank>('일반');
+  const [autoRoll, setAutoRoll] = useState(false);
+  const [targetRank, setTargetRank] = useState<Rank>('신화');
+  // rank 등급 비교 함수
+  const isRankAtLeast = (rank: Rank, target: Rank) => {
+    return RANK_VALUES[rank] >= RANK_VALUES[target];
+  };
   const [isRolling, setIsRolling] = useState(false);
   const [totalPowder, setTotalPowder] = useState(0);
   const [totalStamp, setTotalStamp] = useState(0);
@@ -186,7 +192,6 @@ export default function App() {
 
   const rollGacha = () => {
     setIsRolling(true);
-    
     // 잠금 개수 계산
     const lockedCount = cards.filter(card => card.locked).length;
     const stampCost = getStampCost(lockedCount);
@@ -213,7 +218,12 @@ export default function App() {
     setTimeout(() => {
       setCards(newCards);
       calculateBonus(newCards);
-      setIsRolling(false);
+      // 연속 뽑기: cards 중 targetRank 이상이 있으면 멈춤, 없으면 계속
+      if (autoRoll && (!newCards.some(card => 
+                        !card.locked && isRankAtLeast(card.rank, targetRank))))
+        rollGacha();
+      else
+        setIsRolling(false);
     }, 100);
   };
 
@@ -266,7 +276,7 @@ export default function App() {
         <div className="text-center mb-8">
           <h1 className="text-5xl font-bold text-white mb-4">아르카나 시뮬레이터</h1>
           {totalPowder > 0 && (
-            <p className="text-slate-400 text-sm mt-2">누적 소모 아이템: {totalPowder.toLocaleString()} 가루, {totalStamp.toLocaleString()} 스탬프 (총 {(totalPowder + totalStamp * 1000).toLocaleString()} 가루)</p>
+            <p className="text-slate-400 text-sm mt-2">누적 소모 아이템: {totalPowder.toLocaleString()} 가루, {totalStamp.toLocaleString()} 스탬프 (총 {(totalPowder + totalStamp * 1000).toLocaleString()} 가루, {((Math.ceil(totalPowder + totalStamp * 1000) / 11.52) / 100).toLocaleString()} 일)</p>
           )}
         </div>
 
@@ -285,9 +295,7 @@ export default function App() {
                       key={`card-${row}-${col}`}
                       onClick={() => toggleLock(index)}
                       className={card 
-                        ? `aspect-square rounded-xl ${RANK_COLORS[card.rank]} border-2 ${card.locked ? 'border-white border-4' : 'border-white/20'} flex items-center justify-center shadow-lg transform transition-all duration-500 cursor-pointer relative ${
-                            isRolling && !card.locked ? 'scale-0 rotate-180' : 'scale-100 rotate-0'
-                          }`
+                        ? `aspect-square rounded-xl ${RANK_COLORS[card.rank]} border-2 ${card.locked ? 'border-white border-4' : 'border-white/20'} flex items-center justify-center shadow-lg transform transition-all duration-500 cursor-pointer relative`
                         : "aspect-square rounded-xl bg-slate-700/50 border-2 border-slate-600 flex items-center justify-center"
                       }
                     >
@@ -364,6 +372,29 @@ export default function App() {
                 초기화
               </Button>
             )}
+          </div>
+          {/* 연속 뽑기 옵션 UI */}
+          <div className="flex items-center gap-4 mb-4 justify-center">
+            <label className="flex items-center gap-2 text-white">
+              <input
+                type="checkbox"
+                checked={autoRoll}
+                onChange={e => setAutoRoll(e.target.checked)}
+              />
+              연속 뽑기
+            </label>
+            <select
+              className="bg-slate-700 text-white rounded px-2 py-1"
+              value={targetRank}
+              onChange={e => setTargetRank(e.target.value as Rank)}
+            >
+              <option value="신화">신화 이상</option>
+              <option value="전설">전설 이상</option>
+              <option value="영웅">영웅 이상</option>
+              <option value="희귀">희귀 이상</option>
+              <option value="고급">고급 이상</option>
+              <option value="일반">일반 이상</option>
+            </select>
           </div>
         </Card>
       </div>
